@@ -1,0 +1,41 @@
+---
+- name: testing
+  hosts: localhost
+  connection: local
+  roles:
+    - role: iface
+      device: "bond0"
+      params:
+        type: bond
+        bootproto: none
+        ipaddr: 10.0.0.1
+        netmask: 255.255.255.0
+        onboot: '"yes"'
+        peerdns: '"no"'
+        nm_controlled: '"no"'
+        bonding_master: '"yes"'
+        bonding_options: '"mode=1 miimon=100"'
+
+  tasks:
+    - debug:
+        msg: "{{ hostvars[inventory_hostname]['ansible_' + item].macaddress }}"
+      when: (hostvars[inventory_hostname]['ansible_' + item] is defined) and
+            (hostvars[inventory_hostname]['ansible_' + item].macaddress is defined)
+      with_items: "{{ ansible_interfaces }}"
+      ignore_errors: True
+
+    - name: Interfaces
+      include_role:
+        name: iface
+      vars:
+        device: "{{ item }}"
+        params:
+          type: Ethernet
+          bootproto: none
+          name: "{{ item }}"
+          onboot: '"yes"'
+          nm_controlled: '"no"'
+          hwaddr: "{{ hostvars[inventory_hostname]['ansible_' + item].macaddress }}"
+      with_items: "{{ ansible_interfaces }}"
+      when: (hostvars[inventory_hostname]['ansible_' + item] is defined) and
+            (hostvars[inventory_hostname]['ansible_' + item].macaddress is defined)
